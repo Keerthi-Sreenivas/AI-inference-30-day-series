@@ -4,7 +4,7 @@
 
 ---
 
-## Step 1: Install dependencies
+ " Step 1: Install dependencies
 
 Install the Python dependencies for this project:
 
@@ -12,7 +12,7 @@ Install the Python dependencies for this project:
 pip install requests
 ```
 
-## Step 2: Install Ollama and pull the model
+ Step 2: Install Ollama and pull the model
 
 Check if Ollama is installed. If not, install it:
 
@@ -27,7 +27,7 @@ ollama serve &
 ollama pull llama3.2:3b
 ```
 
-## Step 3: Create the project
+ Step 3: Create the project
 
 Create a `requirements.txt` with:
 ```
@@ -45,4 +45,4 @@ Create a minimal Python script called `main.py` that demonstrates local AI infer
 
 4. **Add educational comments** explaining the API structure — what the request body looks like, what the response contains, and what the endpoint does.
 
-Use only the `requests` library to talk to Ollama's local API (http://localhost:11434). Don't use the official ollama Python package — I want to see the raw HTTP calls so I understand the API.
+Use only the `requests` library to talk to Ollama's local API (http://localhost:11434). Don't use the official ollama Python package — I want to see the raw HTTP calls so I understand the API. "
