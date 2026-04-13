@@ -1,6 +1,6 @@
 # 30 Days of AI Inference Engineering
 
-A hands-on, 90-second-video learning series that takes you from zero to deploying production inference — one concept per day, one prompt per day.
+A hands-on, learning series by @qriositybykeerthi that takes you from zero to hero in production inference — one concept per day, one prompt per day.
 
 ## How This Works
 
@@ -15,10 +15,9 @@ Each day covers one concept in AI inference engineering:
 
 - Python 3.10+
 - 16GB RAM minimum (32GB recommended)
-- GPU optional for Week 1 (required from Week 2+)
-- A coding assistant (Kiro CLI recommended)
+- A coding assistant (Example: Claude code, Kiro CLI etc)
 
-## Curriculum
+## Curriculum (Tentative - this can change)
 
 ### Week 1: Foundations & First Inference
 | Day | Concept | Tools |
