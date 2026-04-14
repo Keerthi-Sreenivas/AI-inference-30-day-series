@@ -64,18 +64,14 @@ print("=" * 60)
 english = "The quick brown fox jumps over the lazy dog."
 code = "def fibonacci(n: int) -> list[int]:"
 
-print(f'\n  English: "{english}"')
-print(f'  Code:    "{code}"\n')
-
 # Code has special characters (:, ->, [, ]) that don't merge as well
 # in BPE vocabularies trained mostly on natural language. Same length
 # of text, but code typically costs more tokens.
-for name, tok in tokenizers.items():
-    en_count = len(tok.encode(english))
-    code_count = len(tok.encode(code))
-    print(f"  {name:10s} -> English: {en_count:2d} tokens, "
-          f"Code: {code_count:2d} tokens")
-print()
+print(f'\n  English: "{english}"\n')
+show_tokens(english)
+
+print(f'  Code: "{code}"\n')
+show_tokens(code)
 
 # -----------------------------------------------------------------------
 # 3. Multilingual costs — non-English text is more expensive
@@ -87,18 +83,14 @@ print("=" * 60)
 en_text = "Hello, how are you?"
 ja_text = "こんにちは、お元気ですか？"  # Same meaning in Japanese
 
-print(f'\n  English:  "{en_text}"')
-print(f'  Japanese: "{ja_text}"\n')
-
 # BPE merge rules are learned from training data. English dominates,
 # so English words get compact tokens. Non-Latin scripts stay as small
 # pieces or individual bytes -> same meaning, way more tokens.
-for name, tok in tokenizers.items():
-    en_count = len(tok.encode(en_text))
-    ja_count = len(tok.encode(ja_text))
-    print(f"  {name:10s} -> English: {en_count:2d} tokens, "
-          f"Japanese: {ja_count:2d} tokens")
-print()
+print(f'\n  English: "{en_text}"\n')
+show_tokens(en_text)
+
+print(f'  Japanese: "{ja_text}"\n')
+show_tokens(ja_text)
 
 # -----------------------------------------------------------------------
 # 4. Formatting costs — whitespace eats tokens
@@ -112,11 +104,8 @@ print("=" * 60)
 compact = '{"name":"Alice","age":30}'
 pretty = '{\n    "name": "Alice",\n    "age": 30\n}'
 
-print(f'\n  Compact: {compact}')
-print(f'  Pretty:  {pretty}\n')
+print(f'\n  Compact: {compact}\n')
+show_tokens(compact)
 
-for name, tok in tokenizers.items():
-    c = len(tok.encode(compact))
-    p = len(tok.encode(pretty))
-    print(f"  {name:10s} -> Compact: {c:2d} tokens, Pretty: {p:2d} tokens")
-print()
+print(f'  Pretty:  {pretty}\n')
+show_tokens(pretty)
