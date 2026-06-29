@@ -1,0 +1,4 @@
+transformers>=5.0.0
+torch>=2.4.0
+accelerate>=1.0.0
+gptqmodel>=7.0.0

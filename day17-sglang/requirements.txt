@@ -1,0 +1,5 @@
+sglang[all]>=0.4.0
+transformers>=5.0.0
+torch>=2.4.0
+requests>=2.31.0
+openai>=1.30.0

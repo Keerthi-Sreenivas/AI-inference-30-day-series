@@ -1,0 +1,4 @@
+vllm>=0.8.0
+ray>=2.10.0
+transformers>=5.0.0
+torch>=2.4.0
