@@ -1,0 +1,5 @@
+transformers>=5.0.0
+torch>=2.4.0
+faiss-cpu>=1.8.0
+sentence-transformers>=3.0.0
+accelerate>=1.0.0

@@ -1,0 +1,3 @@
+vllm>=0.8.0
+requests>=2.31.0
+psutil>=5.9.0
