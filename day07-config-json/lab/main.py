@@ -35,7 +35,7 @@ print(f"  num_key_value_heads:     {config.num_key_value_heads}")
 print(f"  head_dim:                {config.head_dim}")
 print(f"  intermediate_size:       {config.intermediate_size:,}")
 print(f"  max_position_embeddings: {config.max_position_embeddings:,}")
-print(f"  torch_dtype:             {config.torch_dtype}")
+print(f"  dtype:                   {config.dtype}")
 print()
 
 # --- Calculate theoretical parameter count from config ---
@@ -148,7 +148,7 @@ print(f"\n{'=' * 70}")
 print("MEMORY ESTIMATE (from config)")
 print("=" * 70)
 
-dtype_str = str(config.torch_dtype)
+dtype_str = str(config.dtype)
 bytes_per_param = {"float32": 4, "float16": 2, "bfloat16": 2, "int8": 1, "int4": 0.5}
 dtype_bytes = bytes_per_param.get(dtype_str, 2)  # Default to 2 bytes if unknown
 
