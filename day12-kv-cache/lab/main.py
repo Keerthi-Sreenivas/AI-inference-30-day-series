@@ -21,12 +21,20 @@ MODEL_NAME = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 print(f"Loading model: {MODEL_NAME}")
 print("(First run downloads ~3.5 GB — subsequent runs use cache)\n")
 
+# Pick a dtype the host can actually execute. fp16 is only safe on CUDA here:
+# on CPU several torch ops are unimplemented for Half ("addmm_impl_cpu_" not
+# implemented for 'Half'), and on Apple Metal an fp16 load placed by
+# device_map="auto" segfaults (verified on torch 2.14 / transformers 5.17).
+# The KV-cache arithmetic below reads the real element_size(), so the lesson
+# holds whichever dtype we land on — only the absolute MB figures change.
+CACHE_DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
+
 try:
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
         device_map="auto",
-        torch_dtype=torch.float16,
+        dtype=CACHE_DTYPE,
     )
 except OSError as e:
     print(f"Failed to load model: {e}")
@@ -52,7 +60,8 @@ print(f"Hidden dimension: {hidden_dim}")
 print(f"Attention heads (Q): {num_attention_heads}")
 print(f"KV heads: {num_kv_heads}")
 print(f"Head dimension: {head_dim}")
-print(f"Dtype: float16 (2 bytes per value)")
+print(f"Dtype: {str(CACHE_DTYPE).replace('torch.', '')} "
+      f"({CACHE_DTYPE.itemsize} bytes per value)")
 print(f"Device: {model.device}")
 print()
 
@@ -61,7 +70,7 @@ print()
 #   memory = num_layers × 2 (K+V) × num_kv_heads × head_dim × bytes_per_value
 # With GQA (Grouped Query Attention), num_kv_heads < num_attention_heads,
 # which reduces the cache size proportionally.
-bytes_per_value = 2  # float16
+bytes_per_value = CACHE_DTYPE.itemsize  # 2 for fp16/bf16, 4 for fp32
 cache_per_token_bytes = num_layers * 2 * num_kv_heads * head_dim * bytes_per_value
 cache_per_token_kb = cache_per_token_bytes / 1024
 cache_per_token_mb = cache_per_token_bytes / (1024 * 1024)
@@ -93,18 +102,32 @@ print(f"Input prompt: {prompt_length} tokens")
 print()
 
 
-def measure_cache_size(past_key_values):
-    """Calculate total memory used by KV cache tensors in bytes."""
-    # past_key_values is a tuple of (key_tensor, value_tensor) per layer.
-    # Each tensor shape: [batch, num_kv_heads, seq_len, head_dim]
+def measure_cache_bytes(past_key_values):
+    """Total bytes held by the KV cache.
+
+    transformers v5 returns a DynamicCache whose per-layer K and V tensors are
+    reached as cache.layers[i].keys and cache.layers[i].values. Each tensor has
+    shape [batch, num_kv_heads, seq_len, head_dim], so summing their storage
+    gives the real cache footprint at this point in the generation.
+
+    Older versions exposed .key_cache / .value_cache lists instead, so we fall
+    back to those when .layers is absent.
+    """
     total_bytes = 0
-    for layer_cache in past_key_values:
-        # DynamicCache uses .key_cache and .value_cache lists in newer transformers
-        if hasattr(layer_cache, "element_size"):
-            total_bytes += layer_cache.nelement() * layer_cache.element_size()
-        else:
-            for tensor in layer_cache:
-                total_bytes += tensor.nelement() * tensor.element_size()
+
+    if hasattr(past_key_values, "layers"):
+        for layer in past_key_values.layers:
+            for tensor in (layer.keys, layer.values):
+                if tensor is not None:
+                    total_bytes += tensor.nelement() * tensor.element_size()
+        return total_bytes
+
+    # transformers < 5 compatibility path
+    for layer_keys, layer_values in zip(
+        past_key_values.key_cache, past_key_values.value_cache
+    ):
+        total_bytes += layer_keys.nelement() * layer_keys.element_size()
+        total_bytes += layer_values.nelement() * layer_values.element_size()
     return total_bytes
 
 
@@ -127,17 +150,7 @@ with torch.no_grad():
     next_token_logits = outputs.logits[:, -1, :]
 
 # Measure initial cache size (includes all prompt tokens)
-initial_cache_bytes = 0
-if hasattr(past_key_values, "key_cache"):
-    # DynamicCache object (newer transformers versions)
-    for layer_keys, layer_values in zip(past_key_values.key_cache, past_key_values.value_cache):
-        initial_cache_bytes += layer_keys.nelement() * layer_keys.element_size()
-        initial_cache_bytes += layer_values.nelement() * layer_values.element_size()
-else:
-    # Tuple of tuples (older format)
-    for layer_kv in past_key_values:
-        for tensor in layer_kv:
-            initial_cache_bytes += tensor.nelement() * tensor.element_size()
+initial_cache_bytes = measure_cache_bytes(past_key_values)
 
 initial_cache_mb = initial_cache_bytes / (1024 * 1024)
 print(f"Initial cache (after {prompt_length} prompt tokens): {initial_cache_mb:.2f} MB")
@@ -148,7 +161,6 @@ cache_measurements = [(prompt_length, initial_cache_mb)]
 generation_start = time.perf_counter()
 
 # Generate tokens one at a time, measuring cache at each step
-current_input_ids = input_ids
 generated_tokens = []
 
 for step in range(NUM_TOKENS_TO_GENERATE):
@@ -167,15 +179,7 @@ for step in range(NUM_TOKENS_TO_GENERATE):
     # Measure cache size at regular intervals
     current_seq_len = prompt_length + step + 1
     if (step + 1) % PRINT_INTERVAL == 0:
-        cache_bytes = 0
-        if hasattr(past_key_values, "key_cache"):
-            for layer_keys, layer_values in zip(past_key_values.key_cache, past_key_values.value_cache):
-                cache_bytes += layer_keys.nelement() * layer_keys.element_size()
-                cache_bytes += layer_values.nelement() * layer_values.element_size()
-        else:
-            for layer_kv in past_key_values:
-                for tensor in layer_kv:
-                    cache_bytes += tensor.nelement() * tensor.element_size()
+        cache_bytes = measure_cache_bytes(past_key_values)
 
         cache_mb = cache_bytes / (1024 * 1024)
         growth_mb = cache_mb - cache_measurements[-1][1]
@@ -261,7 +265,9 @@ if len(cache_measurements) >= 2:
     measured_per_token_kb = measured_per_token_mb * 1024
     print(f"{'Measured cache/token':<40} {measured_per_token_kb:.2f} KB")
 
-print(f"{'Final cache size ({cache_measurements[-1][0]} tokens)':<40} {cache_measurements[-1][1]:.2f} MB")
+final_len, final_mb = cache_measurements[-1]
+final_label = f"Final cache size ({final_len} tokens)"
+print(f"{final_label:<40} {final_mb:.2f} MB")
 print(f"{'Cache speedup vs no cache':<40} {speedup:.1f}×")
 print("-" * 70)
 print()

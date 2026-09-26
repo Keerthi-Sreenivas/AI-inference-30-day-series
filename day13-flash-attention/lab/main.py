@@ -184,7 +184,7 @@ def benchmark_generation(model, input_ids, attention_mask, label):
 print(f"\nLoading model with standard attention...")
 model_standard = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
-    torch_dtype=torch.float16,
+    dtype=torch.float16,
     device_map="auto" if has_cuda else "cpu",
     attn_implementation="eager",  # Explicit standard attention
 )
@@ -217,7 +217,7 @@ if flash_supported and flash_attn_installed:
     print(f"\nLoading model with Flash Attention 2...")
     model_flash = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
         device_map="auto",
         attn_implementation="flash_attention_2",  # The only change needed!
     )

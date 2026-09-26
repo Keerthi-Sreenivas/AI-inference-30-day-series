@@ -69,7 +69,7 @@ before_mb = get_memory_mb()
 try:
     model_fp32 = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
         device_map="cpu",  # Force CPU to get accurate RSS measurements
     )
 except OSError as e:
@@ -113,7 +113,7 @@ before_mb = get_memory_mb()
 
 model_fp16 = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
-    torch_dtype=torch.float16,
+    dtype=torch.float16,
     device_map="cpu",
 )
 
@@ -149,7 +149,7 @@ before_mb = get_memory_mb()
 
 model_bf16 = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
-    torch_dtype=torch.bfloat16,
+    dtype=torch.bfloat16,
     device_map="cpu",
 )
 

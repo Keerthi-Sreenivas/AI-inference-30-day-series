@@ -26,7 +26,7 @@ print("=" * 70)
 
 try:
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float16)
+    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, dtype=torch.float16)
 except OSError as e:
     print(f"Failed to load model: {e}")
     print("Check your internet connection and try again.")

@@ -75,7 +75,7 @@ def clear_gpu_memory():
 
 # ─── Print GPU Info ───────────────────────────────────────────────────────────
 gpu_name = torch.cuda.get_device_name(0)
-gpu_total_vram = torch.cuda.get_device_properties(0).total_mem / (1024 ** 3)
+gpu_total_vram = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
 print(f"GPU: {gpu_name} ({gpu_total_vram:.1f} GB total VRAM)")
 print()
 
@@ -88,7 +88,7 @@ clear_gpu_memory()
 try:
     model_fp16 = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
         device_map="auto",
     )
 except OSError as e:
@@ -96,7 +96,7 @@ except OSError as e:
     MODEL_NAME = FALLBACK_MODEL
     model_fp16 = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
         device_map="auto",
     )
 

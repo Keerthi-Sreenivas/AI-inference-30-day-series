@@ -122,7 +122,7 @@ def start_builtin_api():
         return {"text": text, "tokens_generated": tokens, "latency_ms": latency_ms}
 
     # Run in a background thread
-    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="warning")
+    config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="warning")
     server = uvicorn.Server(config)
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()

@@ -252,7 +252,7 @@ print(f"\nStarting production API on port {API_PORT}...")
 
 
 def run_server():
-    uvicorn.run(app, host="0.0.0.0", port=API_PORT, log_level="warning")
+    uvicorn.run(app, host="127.0.0.1", port=API_PORT, log_level="warning")
 
 
 server_thread = threading.Thread(target=run_server, daemon=True)

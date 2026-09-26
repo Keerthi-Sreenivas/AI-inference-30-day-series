@@ -37,7 +37,7 @@ if not torch.cuda.is_available():
 
 # Print GPU info so we know what hardware we're working with
 gpu_name = torch.cuda.get_device_name(0)
-gpu_vram = torch.cuda.get_device_properties(0).total_mem / 1e9
+gpu_vram = torch.cuda.get_device_properties(0).total_memory / 1e9
 print(f"GPU detected: {gpu_name} ({gpu_vram:.1f} GB VRAM)")
 print(f"CUDA version: {torch.version.cuda}")
 print()
@@ -87,7 +87,7 @@ try:
     awq_model = AutoModelForCausalLM.from_pretrained(
         AWQ_MODEL,
         device_map="auto",
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
     )
     print("AWQ model loaded successfully.")
     awq_params = sum(p.numel() for p in awq_model.parameters())
